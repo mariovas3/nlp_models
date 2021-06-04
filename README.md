@@ -1,5 +1,5 @@
 # torch_models
-* Contains models impolemented with torch.
+* Contains models implemented with torch.
 
 ## Currently has:
 * FeedForwardNet
