@@ -103,3 +103,32 @@ class NSP(nn.Module):
 
     def forward(self, cls_token):
         return self.net(cls_token)
+
+
+class BertModel(nn.Module):
+    def __init__(self, key_dim, query_dim, value_dim, hidden_dim, num_heads,
+                 norm_dim, ffn_input, ffn_hidden, num_layers, vocab_size, pos_encoding_size,
+                 mlm_input, mlm_hiddens, nsp_input, nsp_hidden, dropout=0, with_bias=True, **kwargs):
+        super(BertModel, self).__init__(**kwargs)
+        self.encoder = BertEncoder(key_dim, query_dim, value_dim, hidden_dim, num_heads,
+                                   norm_dim, ffn_input, ffn_hidden, num_layers, vocab_size,
+                                   pos_encoding_size, dropout, with_bias, **kwargs)
+        self.mlm = MLM(mlm_input, mlm_hiddens, vocab_size)
+        self.nsp = NSP(nsp_input, nsp_hidden)
+
+    def forward(self, token_ids, segments, attention_masks, masked_positions=None):
+        """
+
+        :param token_ids: bert-style tokens; token_ids.shape = (batch_size, max_len_seq)
+        :param segments: segments.shape = (batch_size, max_len_seq)
+        :param attention_masks: attention_masks.shape = (batch_size)
+        :param masked_positions: this is for the MLM and masked_positions.shape = (batch_size, longest_mask)
+        :return: tuple of (<bert_encoding>, <mlm_preds>, <nsp_preds>)
+        """
+        encodings = self.encoder(token_ids, segments, attention_masks)  # gets encodings from BertEncoder;
+        if masked_positions is not None:
+            mlm_preds = self.mlm(encodings, masked_positions)  # predicts masked_positions;
+        else:
+            mlm_preds = None
+        nsp_preds = self.nsp(encodings[:, 0, :])  # gets <cls> token as input;
+        return encodings, mlm_preds, nsp_preds
