@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import os
 
+
 def _get_web_pages_of_books(num_books=100):
     """
     Gets the links to the pages of the 100 top books yesterday on project Gutenberg;
@@ -64,6 +65,7 @@ def save_gutenberg_books(file_name, num_books=100):
     """
     Saves books in ../data/file_name;
     :param file_name: name of file to store the books;
+    :param num_books: choose how many books to scrape [1, 100];
     :return: -1 if path already exists, 1 otherwise;
     """
     return _scrape_books(_get_links_to_text(_get_web_pages_of_books(num_books)), file_name)
@@ -71,4 +73,3 @@ def save_gutenberg_books(file_name, num_books=100):
 
 if __name__ == "__main__":
     save_gutenberg_books("gutenberg_books.txt", 5)
-
