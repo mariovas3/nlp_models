@@ -134,8 +134,8 @@ def _get_bert_pretraining_inputs(pretrain_tuples, max_len, vocab):
     all_token_idxs, all_positions_of_masks, all_label_idxs = [], [], []
     all_segments, all_mlm_weights, nsp_labels, attention_masks = [], [], [], []
     for masked_token_idxs, positions_of_masks, idxs_of_labes, segments, is_next in pretrain_tuples:
-        all_token_idxs.append(torch.tensor(masked_token_idxs + vocab["<pad>"] * (max_len - len(masked_token_idxs)),
-                                           dtype=torch.long))
+        all_token_idxs.append(torch.tensor(
+            masked_token_idxs + vocab["<pad>"] * (max_len - len(masked_token_idxs)), dtype=torch.long))
         all_positions_of_masks.append(torch.tensor(
             positions_of_masks + [0] * (max_masks_allowed - len(positions_of_masks)), dtype=torch.long))
         all_label_idxs.append(torch.tensor(
