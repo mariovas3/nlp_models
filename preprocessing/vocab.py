@@ -39,6 +39,11 @@ def count_corpus(corpus):
 
 class Vocab:
     def __init__(self, tokens=None, reserved_tokens=None, min_freq=0):
+        """
+        :param tokens: 1D or 2D list of tokens;
+        :param reserved_tokens: list of reserved tokens other than <unk>;
+        :param min_freq: take tokens that appear more than min_freq times;
+        """
         if tokens is None:
             tokens = []
         if reserved_tokens is None:
