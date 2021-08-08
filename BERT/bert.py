@@ -47,7 +47,6 @@ class BertEncoder(nn.Module):
         """
         embeds = self.word_embeds(token_ids) + self.segment_embeds(segments)
         embeds += self.pos_encodings.data[:, :embeds.shape[1], :]
-        print(embeds.shape)
         for mod in self.encoders:
             embeds = mod(embeds, attention_masks)
         return embeds
