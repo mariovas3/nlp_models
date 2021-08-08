@@ -41,11 +41,6 @@ def _scrape_books(links_to_text, file_name, truncate=True):
     case it truncates; If False, it appends;
     :return: void;
     """
-    carry_on = 'y'
-    if os.path.exists(f"../data/{file_name}"):
-        carry_on = input("A file with that name already exists, if truncate is True I will overwrite it. Continue [y/n]:")
-    if carry_on == 'n':
-        return
     if not os.path.exists("../data"):
         os.mkdir("../data")
     save_path = os.path.join("../data/", file_name)
@@ -68,7 +63,8 @@ def _scrape_books(links_to_text, file_name, truncate=True):
         with open(save_path, mode) as books:
             books.write(f"<book_{'_'.join(re.sub('[,.]+', ' ', soup.title.get_text()).strip().lower().split())}>\n")
             for p in soup.select("body p"):
-                books.write(p.get_text())
+                books.write("".join(p.get_text().splitlines()))
+                books.write('\n')
             books.write('\n')
         # stop truncation after first book;
         if mode == 'w':
@@ -83,4 +79,10 @@ def save_gutenberg_books(file_name, num_books=100, truncate=True):
     :param truncate: boolean, if True, truncates the contents of file_name, else appends to file_name;
     :return: void;
     """
+    carry_on = 'y'
+    if os.path.exists(f"../data/{file_name}"):
+        carry_on = input(
+            "A file with that name already exists, if truncate is True I will overwrite it. Continue [y/n]:")
+    if carry_on == 'n':
+        return
     _scrape_books(_get_links_to_text(_get_web_pages_of_books(num_books)), file_name, truncate)
