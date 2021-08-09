@@ -79,10 +79,11 @@ def save_gutenberg_books(file_name, num_books=100, truncate=True):
     :param truncate: boolean, if True, truncates the contents of file_name, else appends to file_name;
     :return: void;
     """
-    carry_on = 'y'
+    carry_on = None
     if os.path.exists(f"../data/{file_name}"):
-        carry_on = input(
-            "A file with that name already exists, if truncate is True I will overwrite it. Continue [y/n]:")
-    if carry_on == 'n':
-        return
+        while carry_on not in ['n', 'y']:
+            carry_on = input(
+                "A file with that name already exists, if truncate is True I will overwrite it. Continue [y/n]:")
+        if carry_on == 'n':
+            return
     _scrape_books(_get_links_to_text(_get_web_pages_of_books(num_books)), file_name, truncate)

@@ -123,7 +123,8 @@ def _mlm_data_from_seq(tokens, vocab):
 
 def _get_bert_pretraining_inputs(pretrain_tuples, max_len, vocab):
     """
-    Pads the inputs for pretraining;
+    Pads the inputs for pretraining; Here mlm_weights are 0 or 1 depending whether it is a padded token or not;
+    This will help in the calculation of the loss later on;
     :param pretrain_tuples: Typle(masked_ids, positions_of_masks, original_labels_of_masks, segments, is_next);
     :param max_len: max len of bert_style_seq;
     :param vocab: vocab.Vocab object;
