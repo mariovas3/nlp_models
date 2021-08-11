@@ -1,5 +1,4 @@
-## Will contain models implemented with PyTorch.
-* I expect to push mostly text-based models in the very near future;
+## Will contain NLP models implemented with PyTorch.
 ### Currently has:
 * Implementation of BERT for pretraining;
   * In the BERT directory there is a demo jupyter notebook demonstrating how to pretrain BERT;
