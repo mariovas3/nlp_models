@@ -52,6 +52,7 @@ class Vocab:
         self._sorted_tokens = sorted([item for item in token_counts.items()
                                       if item[1] > min_freq], key=lambda x: x[1], reverse=True)
         self._idx_to_token = ["<unk>"] + reserved_tokens
+        self.num_special_tokens = len(self._idx_to_token)
         self._token_to_idx = {self._idx_to_token[i]: i for i in range(len(self._idx_to_token))}
         for token, _ in self._sorted_tokens:
             if token not in self._token_to_idx:
