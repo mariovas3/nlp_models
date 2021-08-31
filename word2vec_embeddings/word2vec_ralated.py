@@ -84,9 +84,37 @@ def _get_triplets(sentence, negatives_sampler, num_negatives, window_size):
     contexts = []
     negatives = []
     centers = sentence
+    fast_check = set(sentence)
     for i in range(len(sentence)):
         curr_contexts = [sentence[j] for j in range(max(0, i - window_size), min(len(sentence) - 1, i + window_size))
                          if j != i]
         contexts.append(curr_contexts)
-        negatives.append(negatives_sampler.sample(num_negatives))
+        curr_negatives = []
+        # the negatives should be random words that are not in the current sentence;
+        while len(curr_negatives) < num_negatives:
+            curr_negatives += [neg for neg in negatives_sampler.sample(num_negatives - len(curr_negatives))
+                               if neg not in fast_check]
+        negatives.append(curr_negatives)
     return zip(centers, contexts, negatives)
+
+
+def get_triplets_from_corpus(tokens, negatives_sampler, num_negatives, max_window_size):
+    """
+
+    :param tokens: tokens[0] is a tokenised sentence (i.e. list of ints);
+    :param negatives_sampler: NegativeSampleGenerator object;
+    :param num_negatives: int type, number of negatives to sample;
+    :param max_window_size: int type; max context window size;
+    :return: itertools.chain object;
+    """
+    triplets = None
+    for sentence in tokens:
+        if len(sentence) <= 2:
+            continue
+        window_size = random.randint(1, max_window_size)
+        new_zipped_triplets = _get_triplets(sentence, negatives_sampler, num_negatives, window_size)
+        if triplets is None:
+            triplets = itertools.chain(new_zipped_triplets)
+        else:
+            triplets = itertools.chain(triplets, new_zipped_triplets)
+    return triplets
