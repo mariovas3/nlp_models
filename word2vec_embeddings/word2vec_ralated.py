@@ -16,6 +16,7 @@ class NegativeSampleGenerator:
         :param vocab: a vocab.Vocab object;
         """
         self.candidates = []
+        # self.taken is an index pointer in self.candidates;
         self.taken = 0
         self.vocab_size = len(vocab)
         self.big_draw = max(1, self.vocab_size // 5)
@@ -26,7 +27,7 @@ class NegativeSampleGenerator:
         """
         Sample num_negatives from the vocab;
         To make it more efficient for large vocabs, a fifth of the vocab is sampled in self.candidates
-        and these are exhausted we make another sample;
+        and when these are exhausted we draw another sample;
         :param num_negatives: how many negatives to sample;
         :return: list of indexes from the vocab of len num_negatives;
         """
@@ -67,8 +68,8 @@ def subsample(tokens, vocab, t=1e-5):
         :param available_tokens: len of corpus;
         :return: boolean based on the logic defined in the docstring;
         """
-        return random.random() <= max(1 - math.sqrt(t / counts[token] * available_tokens), 0)
-    samples = [[vocab[token] for token in line if discard(token, counts, available_tokens)] for line in tokens]
+        return random.random() <= max(1 - math.sqrt( t / (counts[token] / available_tokens) ), 0)
+    return [[vocab[token][0] for token in line if not discard(token, counts, available_tokens)] for line in tokens]
 
 
 def _get_triplets(sentence, negatives_sampler, num_negatives, window_size):
@@ -86,7 +87,7 @@ def _get_triplets(sentence, negatives_sampler, num_negatives, window_size):
     centers = sentence
     fast_check = set(sentence)
     for i in range(len(sentence)):
-        curr_contexts = [sentence[j] for j in range(max(0, i - window_size), min(len(sentence) - 1, i + window_size))
+        curr_contexts = [sentence[j] for j in range(max(0, i - window_size), min(len(sentence), i + window_size + 1))
                          if j != i]
         contexts.append(curr_contexts)
         curr_negatives = []
@@ -100,7 +101,8 @@ def _get_triplets(sentence, negatives_sampler, num_negatives, window_size):
 
 def get_triplets_from_corpus(tokens, negatives_sampler, num_negatives, max_window_size):
     """
-
+    Gets an itertools.chain object comprised of zipped (centers, contexts, negatives) tuples
+    coming from _get_triplets();
     :param tokens: tokens[0] is a tokenised sentence (i.e. list of ints);
     :param negatives_sampler: NegativeSampleGenerator object;
     :param num_negatives: int type, number of negatives to sample;
