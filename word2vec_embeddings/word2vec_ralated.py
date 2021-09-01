@@ -10,9 +10,9 @@ import itertools
 
 
 class NegativeSampleGenerator:
-    def __init__(self, vocab):
+    def __init__(self, vocab, sampling_weights):
         """
-        Sampling indexes from vocab;
+        Sampling indexes from vocab according to the distribution corresponding to self.sampling_weights;
         :param vocab: a vocab.Vocab object;
         """
         self.candidates = []
@@ -22,6 +22,8 @@ class NegativeSampleGenerator:
         self.big_draw = max(1, self.vocab_size // 5)
         # no need to sample special tokens such as <unk>, <pad> etc...
         self.population = list(range(vocab.num_special_tokens, self.vocab_size))
+        # sampling weights for sampling negative examples;
+        self.sampling_weights = sampling_weights
 
     def sample(self, num_negatives):
         """
@@ -33,18 +35,31 @@ class NegativeSampleGenerator:
         """
         result = []
         if len(self.candidates) == 0 or self.taken + num_negatives > len(self.candidates):
-            self.candidates = random.sample(self.population, self.big_draw)
+            self.candidates = random.choices(self.population, weights=self.sampling_weights, k=self.big_draw)
             self.taken = 0
         if num_negatives > self.big_draw:
             times = num_negatives // self.big_draw
             for _ in range(times):
-                result += random.sample(self.population, self.big_draw)
-            self.candidates = random.sample(self.population, self.big_draw)
+                result += random.choices(self.population, weights=self.sampling_weights, k=self.big_draw)
+            self.candidates = random.choices(self.population, weights=self.sampling_weights, k=self.big_draw)
             if num_negatives % self.big_draw == 0:
                 return result
             num_negatives %= self.big_draw
         self.taken += num_negatives
         return result + self.candidates[self.taken-num_negatives:self.taken]
+
+
+def get_negative_sampler(counts, vocab):
+    """
+    Sorts out the sampling distribution for sampling negatives according to the Mikolov et. al. paper;
+    i.e. proportional to word_frequency ** 0.75;
+    :param counts: dict object of (token, frequency) pairs;
+    :param vocab: vocab.Vocab object;
+    :return: NegativeSampleGenerator object;
+    """
+    sampling_weights = [counts[vocab.convert_to_token(token_id)[0]] ** 0.75
+                        for token_id in range(vocab.num_special_tokens, len(vocab))]
+    return NegativeSampleGenerator(vocab, sampling_weights)
 
 
 def subsample(tokens, vocab, t=1e-5):
@@ -55,7 +70,7 @@ def subsample(tokens, vocab, t=1e-5):
     :param vocab: a vocab.Vocab object;
     :param t: this is a heuristic for discarding very frequent words; Depends on sample size and the construction
     of your corpus (since higher t leads to lower probability to discard any given word);
-    :return: a list of lists of token_ids based on the mapping from vocab;
+    :return: a list of lists of token_ids based on the mapping from vocab; and counts of frequencies as a dict object;
     """
     counts = voc.count_corpus(tokens)
     available_tokens = sum(counts.values())
@@ -69,7 +84,8 @@ def subsample(tokens, vocab, t=1e-5):
         :return: boolean based on the logic defined in the docstring;
         """
         return random.random() <= max(1 - math.sqrt( t / (counts[token] / available_tokens) ), 0)
-    return [[vocab[token][0] for token in line if not discard(token, counts, available_tokens)] for line in tokens]
+    return ([[vocab[token][0] for token in line if not discard(token, counts, available_tokens)]
+             for line in tokens], counts)
 
 
 def _get_triplets(sentence, negatives_sampler, num_negatives, window_size):
@@ -92,8 +108,10 @@ def _get_triplets(sentence, negatives_sampler, num_negatives, window_size):
         contexts.append(curr_contexts)
         curr_negatives = []
         # the negatives should be random words that are not in the current sentence;
-        while len(curr_negatives) < num_negatives:
-            curr_negatives += [neg for neg in negatives_sampler.sample(num_negatives - len(curr_negatives))
+        # there should be num_negatives per context word;
+        K = num_negatives * len(curr_contexts)
+        while len(curr_negatives) < K:
+            curr_negatives += [neg for neg in negatives_sampler.sample(K - len(curr_negatives))
                                if neg not in fast_check]
         negatives.append(curr_negatives)
     return zip(centers, contexts, negatives)
@@ -111,7 +129,7 @@ def get_triplets_from_corpus(tokens, negatives_sampler, num_negatives, max_windo
     """
     triplets = None
     for sentence in tokens:
-        if len(sentence) <= 2:
+        if len(sentence) < 2:
             continue
         window_size = random.randint(1, max_window_size)
         new_zipped_triplets = _get_triplets(sentence, negatives_sampler, num_negatives, window_size)
