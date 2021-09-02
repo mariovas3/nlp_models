@@ -149,15 +149,15 @@ def _get_batches(ccn_iter):
     for center, context, negative in ccn_iter:
         max_len = max(max_len, len(context) + len(negative))
 
-    centers, contexts_and_negatives, mask_pads, mask_neg_and_pads = [], [], [], []
+    centers, contexts_and_negatives, coefficients, mask_pads = [], [], [], []
     for center, contexts, negatives in ccn_iter:
         centers += [center]
         temp_len = len(contexts) + len(negatives)
         contexts_and_negatives += [contexts + negatives + [0] * (max_len - temp_len)]
+        coefficients += [[1] * len(contexts) + [-1] * len(negatives) + [0] * (max_len - temp_len)]
         mask_pads += [[1] * temp_len + [0] * (max_len - temp_len)]
-        mask_neg_and_pads += [[1] * len(contexts) + [0] * (max_len - len(contexts))]
     return (torch.tensor(centers).reshape(-1, 1), torch.tensor(contexts_and_negatives),
-            torch.tensor(mask_pads), torch.tensor(mask_neg_and_pads))
+            torch.tensor(coefficients, dtype=torch.float32), torch.tensor(mask_pads, dtype=torch.float32))
 
 
 class _EmbeddingsDataset(torch.utils.data.Dataset):
