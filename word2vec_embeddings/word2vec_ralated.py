@@ -162,6 +162,13 @@ def _get_batches(ccn_iter):
 
 class _EmbeddingsDataset(torch.utils.data.Dataset):
     def __init__(self, centers, contexts, negatives, **kwargs):
+        """
+        Custom dataset object for word2vec embeddings;
+        :param centers: list of ints;
+        :param contexts: list of lists of ints;
+        :param negatives: list of lists of ints;
+        :param kwargs: passed to base class constructor;
+        """
         super(_EmbeddingsDataset, self).__init__(**kwargs)
         self.centers = centers
         self.contexts = contexts
