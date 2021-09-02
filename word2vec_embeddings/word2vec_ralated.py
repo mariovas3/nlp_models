@@ -96,7 +96,7 @@ def _get_triplets(sentence, negatives_sampler, num_negatives, window_size):
     :param negatives_sampler: object of type NegativeSampleGenerator;
     :param num_negatives: int type, how many negatives to sample;
     :param window_size: int type, the size of context window;
-    :return: zipped triplet centers, contexts, negatives;
+    :return: tuple centers, contexts, negatives;
     """
     contexts = []
     negatives = []
@@ -114,36 +114,35 @@ def _get_triplets(sentence, negatives_sampler, num_negatives, window_size):
             curr_negatives += [neg for neg in negatives_sampler.sample(K - len(curr_negatives))
                                if neg not in fast_check]
         negatives.append(curr_negatives)
-    return zip(centers, contexts, negatives)
+    return centers, contexts, negatives
 
 
 def get_triplets_from_corpus(tokens, negatives_sampler, num_negatives, max_window_size):
     """
-    Gets an itertools.chain object comprised of zipped (centers, contexts, negatives) tuples
-    coming from _get_triplets();
+    Gets a tuple of lists object comprised of (centers, contexts, negatives);
     :param tokens: tokens[0] is a tokenised sentence (i.e. list of ints);
     :param negatives_sampler: NegativeSampleGenerator object;
     :param num_negatives: int type, number of negatives to sample;
     :param max_window_size: int type; max context window size;
-    :return: itertools.chain object;
+    :return: tuple of 3 lists;
     """
     triplets = None
+    all_centers, all_contexts, all_negatives = [], [], []
     for sentence in tokens:
         if len(sentence) < 2:
             continue
         window_size = random.randint(1, max_window_size)
-        new_zipped_triplets = _get_triplets(sentence, negatives_sampler, num_negatives, window_size)
-        if triplets is None:
-            triplets = itertools.chain(new_zipped_triplets)
-        else:
-            triplets = itertools.chain(triplets, new_zipped_triplets)
-    return triplets
+        center, context, negative = _get_triplets(sentence, negatives_sampler, num_negatives, window_size)
+        all_centers += center
+        all_contexts += context
+        all_negatives += negative
+    return all_centers, all_contexts, all_negatives
 
 
-def get_batches(ccn_iter):
+def _get_batches(ccn_iter):
     """
     This is the collate_fn for the torch.utils.data.DataLoader object;
-    :param ccn_iter: itertools.chain type;
+    :param ccn_iter: comes from a torch.utils.data.Dataset.__getitem__ method;
     :return: tuple of torch.tensor objects;
     """
     max_len = -1
