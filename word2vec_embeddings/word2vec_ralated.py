@@ -158,3 +158,17 @@ def _get_batches(ccn_iter):
         mask_neg_and_pads += [[1] * len(contexts) + [0] * (max_len - len(contexts))]
     return (torch.tensor(centers).reshape(-1, 1), torch.tensor(contexts_and_negatives),
             torch.tensor(mask_pads), torch.tensor(mask_neg_and_pads))
+
+
+class _EmbeddingsDataset(torch.utils.data.Dataset):
+    def __init__(self, centers, contexts, negatives, **kwargs):
+        super(_EmbeddingsDataset, self).__init__(**kwargs)
+        self.centers = centers
+        self.contexts = contexts
+        self.negatives = negatives
+
+    def __getitem__(self, idx):
+        return self.centers[idx], self.contexts[idx], self.negatives[idx]
+
+    def __len__(self):
+        return len(self.centers)
