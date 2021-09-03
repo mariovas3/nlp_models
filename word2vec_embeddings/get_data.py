@@ -24,7 +24,7 @@ def get_sentences_from_books(file_name, num_books=100, truncate=True):
     with open(f"../data/{file_name}", 'r') as f:
         lines = f.readlines()
     lines = [tokenizer.tokenize(paragraph) for paragraph in lines]
-    return [re.sub("[^A-Za-z\']+", ' ', line).strip().lower().split()
+    return [re.sub("[^A-Za-z]+", ' ', line).strip().lower().split()
             for paragraph in lines for line in paragraph
             if "<book" not in line and len(line.split()) > 2]
 

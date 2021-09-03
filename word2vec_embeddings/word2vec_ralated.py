@@ -179,3 +179,21 @@ class _EmbeddingsDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.centers)
+
+
+def get_close_words(word, embeds, vocab, k):
+    """
+    Gets top k closes words to word in terms of cosine similarity; Cosine similarity is used since
+    it maps to [-1, 1] which can give one an intuition about relative distance (close to 1 is close,
+    close to -1 is far).
+    :param word: string;
+    :param embeds: the embeddings;
+    :param vocab: vocab.Vocab type object;
+    :param k: unsigned int;
+    :return: tuple of torch.tensor objects (cosine_sims, indeces);
+    """
+    if type(embeds) != torch.Tensor:
+        embeds = torch.tensor(embeds, requires_grad=False)
+    v = embeds[vocab[word]].reshape(-1, 1)  # shape is (1, embed_size)
+    cosine_sims = (embeds @ v) / (torch.sqrt((embeds * embeds).sum(1)).reshape(-1, 1) * torch.sqrt((v * v).sum()))
+    return torch.topk(cosine_sims, k=k, dim=0)
