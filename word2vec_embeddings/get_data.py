@@ -1,4 +1,5 @@
 import torch
+from torchtext.datasets import WikiText2
 import sys
 sys.path.append("../BERT")
 sys.path.append("../preprocessing")
@@ -51,5 +52,41 @@ def get_iter_and_vocab_neg(file_name, num_books=100, truncate=True, reserved_tok
     centers, contexts, negatives = w2v_neg.get_triplets_from_corpus(subsampled, negatives_sampler, num_negatives,
                                                                     max_window_size)
     dataset = w2v_neg._EmbeddingsDataset(centers, contexts, negatives)
-    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, collate_fn=w2v_neg._get_batches)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
+                                         collate_fn=w2v_neg._get_batches)
+    return loader, vocab
+
+
+def get_wikitext2_data_neg(dir, reserved_tokens=["<pad>"], vocab_min_freq=0,
+                         t=1e-5, num_negatives=5, max_window_size=4, shuffle=True, batch_size=512):
+    """
+    Returns torch.utils.data.DataLoader object and vocab.Vocab object for the word2vec training following the
+    negative sampling procedure for the WikiText2 data set;
+    :param dir: Where to store the files/data from the WikiText2 dataset;
+    :param reserved_tokens: to be passed to vocab.Vocab constructor;
+    :param vocab_min_freq: to be passed to vocab.Vocab constructor;
+    :param t: heuristic to be passed to w2v_neg.subsample function;
+    :param num_negatives: how many negatives to sample per context word;
+    :param max_window_size: size of context window;
+    :param shuffle: boolean, to be passed to constructor of torch.utils.data.DataLoader;
+    :param batch_size: to be passed to constructor of torch.utils.data.DataLoader;
+    :return: torch.utils.data.DataLoader, vocab.Vocab;
+    """
+    tokenizer = get_nltk_tokenizer()
+    train_iter = WikiText2(dir, split="train")
+    train_sentences = [tokenizer.tokenize(paragraph) for paragraph in train_iter]
+
+    train_sentences = [re.sub("[^A-Za-z]+", ' ', str(sentence)).strip().lower().split()
+                       for sentence in train_sentences]
+
+    train_tokens = [[token for token in sentence if len(token) > 2 and "unk" not in token]
+                       for sentence in train_sentences]
+    vocab = voc.Vocab(train_tokens, reserved_tokens=reserved_tokens, min_freq=vocab_min_freq)
+    subsampled, counts = w2v_neg.subsample(train_tokens, vocab, t=t)
+    negatives_sampler = w2v_neg.get_negative_sampler(counts, vocab)
+    centers, contexts, negatives = w2v_neg.get_triplets_from_corpus(subsampled, negatives_sampler, num_negatives,
+                                                                    max_window_size)
+    dataset = w2v_neg._EmbeddingsDataset(centers, contexts, negatives)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
+                                         collate_fn=w2v_neg._get_batches)
     return loader, vocab
