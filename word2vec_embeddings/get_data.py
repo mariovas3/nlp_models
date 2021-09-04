@@ -6,7 +6,8 @@ import vocab as voc
 import top100GutenbergScraper as scraper
 from bert_data_processing import get_nltk_tokenizer
 import re
-import word2vec_ralated as w2v
+import word2vec_NEG as w2v_neg
+torch.manual_seed(42)
 
 
 def get_sentences_from_books(file_name, num_books=100, truncate=True):
@@ -29,7 +30,7 @@ def get_sentences_from_books(file_name, num_books=100, truncate=True):
             if "<book" not in line and len(line.split()) > 2]
 
 
-def get_iter_and_vocab(file_name, num_books=100, truncate=True, reserved_tokens=["<pad>"], vocab_min_freq=0,
+def get_iter_and_vocab_neg(file_name, num_books=100, truncate=True, reserved_tokens=["<pad>"], vocab_min_freq=0,
                          t=1e-5, num_negatives=5, max_window_size=4, shuffle=True, batch_size=512):
     """
     Returns a torch.utils.data.DataLoader and vocab.Vocab object;
@@ -45,10 +46,10 @@ def get_iter_and_vocab(file_name, num_books=100, truncate=True, reserved_tokens=
     """
     sentences = get_sentences_from_books(file_name, num_books, truncate)
     vocab = voc.Vocab(sentences, reserved_tokens=reserved_tokens, min_freq=vocab_min_freq)
-    subsampled, counts = w2v.subsample(sentences, vocab, t=t)
-    negatives_sampler = w2v.get_negative_sampler(counts, vocab)
-    centers, contexts, negatives = w2v.get_triplets_from_corpus(subsampled, negatives_sampler, num_negatives,
-                                                                max_window_size)
-    dataset = w2v._EmbeddingsDataset(centers, contexts, negatives)
-    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, collate_fn=w2v._get_batches)
+    subsampled, counts = w2v_neg.subsample(sentences, vocab, t=t)
+    negatives_sampler = w2v_neg.get_negative_sampler(counts, vocab)
+    centers, contexts, negatives = w2v_neg.get_triplets_from_corpus(subsampled, negatives_sampler, num_negatives,
+                                                                    max_window_size)
+    dataset = w2v_neg._EmbeddingsDataset(centers, contexts, negatives)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, collate_fn=w2v_neg._get_batches)
     return loader, vocab
