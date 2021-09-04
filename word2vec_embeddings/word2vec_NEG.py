@@ -6,7 +6,9 @@ sys.path.append("../preprocessing")
 import vocab as voc
 import random
 import math
-import itertools
+torch.manual_seed(42)
+np.random.seed(42)
+random.seed(42)
 
 
 class NegativeSampleGenerator:

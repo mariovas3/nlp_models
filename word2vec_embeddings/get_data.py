@@ -8,7 +8,11 @@ import top100GutenbergScraper as scraper
 from bert_data_processing import get_nltk_tokenizer
 import re
 import word2vec_NEG as w2v_neg
+import random
+import numpy as np
 torch.manual_seed(42)
+random.seed(42)
+np.random.seed(42)
 
 
 def get_sentences_from_books(file_name, num_books=100, truncate=True):
