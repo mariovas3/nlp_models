@@ -5,7 +5,8 @@ sys.path.append("../BERT")
 sys.path.append("../preprocessing")
 import vocab as voc
 import top100GutenbergScraper as scraper
-from bert_data_processing import get_nltk_tokenizer
+import nltk.data
+import os
 import re
 import word2vec_NEG as w2v_neg
 import random
@@ -13,6 +14,20 @@ import numpy as np
 torch.manual_seed(42)
 random.seed(42)
 np.random.seed(42)
+
+
+def get_nltk_tokenizer():
+    """
+    Gets the nltk punkt tokenizer so that I can split the sentences in each paragraph of the Project Gutenberg books;
+    or the WikiText2 data;
+    :return: <nltk_punkt_tokenizer>;
+    """
+    if not os.path.exists("../data/tokenizers/punkt/english.pickle"):
+        if not os.path.exists("../data"):
+            os.mkdir("../data")
+        nltk.download("punkt", download_dir="../data/")
+    tokenizer = nltk.data.load("../data/tokenizers/punkt/english.pickle")
+    return tokenizer
 
 
 def get_sentences_from_books(file_name, num_books=100, truncate=True):
