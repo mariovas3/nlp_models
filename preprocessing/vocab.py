@@ -62,20 +62,20 @@ class Vocab:
     def __len__(self):
         return len(self._idx_to_token)
 
-    def _tokens_to_index(self, tokens):
+    def _convert_to_idxs(self, tokens):
         if not isinstance(tokens, (list, tuple)):
             return self._token_to_idx.get(tokens, 0)  # idx if in dict else idx_of_unk
-        return [self._tokens_to_index(token) for token in tokens]
+        return [self._convert_to_idxs(token) for token in tokens]
 
     def __getitem__(self, tokens):
-        idxs = self._tokens_to_index(tokens)
+        idxs = self._convert_to_idxs(tokens)
         return idxs if isinstance(idxs, list) else [idxs]
 
-    def _idxs_to_tokens(self, idxs):
+    def _convert_to_tokens(self, idxs):
         if not isinstance(idxs, (list, tuple)):
             return self._idx_to_token[idxs] if (idxs >= 0 and idxs < len(self._idx_to_token)) else "<unk>"
-        return [self._idxs_to_tokens(idx) for idx in idxs]
+        return [self._convert_to_tokens(idx) for idx in idxs]
 
     def convert_to_token(self, idxs):
-        tokens = self._idxs_to_tokens(idxs)
+        tokens = self._convert_to_tokens(idxs)
         return tokens if isinstance(tokens, list) else [tokens]
