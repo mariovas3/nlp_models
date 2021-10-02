@@ -203,7 +203,7 @@ def get_gutenberg_loader_and_vocab(batch_size, max_len, file_name, num_books, tr
     return pretrain_loader, pretrain_dataset.vocab
 
 
-def get_AG_NEWS_loader_and_vocab(batch_size: int, max_len: int, directory: str="../data", vocab_min_freq:int =5):
+def get_ag_news_loader_and_vocab(batch_size: int, max_len: int, directory: str= "../data", vocab_min_freq:int = 5):
     """
     Make the ag news (training) dataset ready for bert pretraining;
     :param batch_size: int type, batch_size for DataLoader object;
@@ -214,14 +214,17 @@ def get_AG_NEWS_loader_and_vocab(batch_size: int, max_len: int, directory: str="
     """
     # get an iterator object for the training part of the ag_news dataset;
     train_iter, = AG_NEWS(root=directory, split=("train",))
+
     # process the strings by removing special characters and lower-casing;
     def clean_text(text):
         return re.sub("[^A-Za-z\s]+", '', re.sub("\\\\", ' ', text).strip()).lower()
+
     # since bert has the Next Sentence Prediction as a training procedure, I split
     # each sentence from the original dataset into two halves;
     def split_in_half(text, with_clean=False):
         tokenised = clean_text(text).split() if with_clean else text.split()
         return tokenised[:len(tokenised) // 2], tokenised[len(tokenised) // 2:]
+
     # clean and split text;
     train_paragraphs = [split_in_half(text, with_clean=True) for _, text in train_iter]
     # get relevant dataset;
