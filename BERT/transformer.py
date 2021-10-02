@@ -25,7 +25,8 @@ def masked_softmax(X, attention_masks, value=-1e6):
     def replacer(X, attention_masks, value):
         # X.shape = (batch_size * num_queries, num_keys)
         # some broadcasting magic...
-        mask = torch.arange(X.size(-1))[None, :] < attention_masks[:, None]
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        mask = torch.arange(X.size(-1), device=device)[None, :] < attention_masks[:, None]
         X[~mask] = value
         return X
     X = replacer(X.reshape(-1, og_shape[2]), attention_masks, value).reshape(og_shape)
