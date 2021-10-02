@@ -1,4 +1,5 @@
 import sys
+from torchtext.datasets import AG_NEWS
 sys.path.append("../preprocessing")
 import vocab as voc
 import torch
@@ -33,7 +34,7 @@ def tokenize_books(lines, tokenizer):
     """
     lines = [tokenizer.tokenize(paragraph) for paragraph in lines]
     random.shuffle(lines)
-    return [[re.sub("[^A-Za-z\'\']+", ' ', sentence).strip().lower().split() for sentence in paragraph]
+    return [[re.sub("[^A-Za-z\']+", ' ', sentence).strip().lower().split() for sentence in paragraph]
              for paragraph in lines if ("<book_" not in paragraph and len(paragraph) >= 2)]
 
 
@@ -200,3 +201,31 @@ def get_gutenberg_loader_and_vocab(batch_size, max_len, file_name, num_books, tr
     pretrain_dataset = GutenbergDataset(paragraphs, max_len, min_freq)
     pretrain_loader = DataLoader(pretrain_dataset, shuffle=True, batch_size=batch_size)
     return pretrain_loader, pretrain_dataset.vocab
+
+
+def get_AG_NEWS_loader_and_vocab(batch_size: int, max_len: int, directory: str="../data", vocab_min_freq:int =5):
+    """
+    Make the ag news (training) dataset ready for bert pretraining;
+    :param batch_size: int type, batch_size for DataLoader object;
+    :param max_len: int type, where to truncate;
+    :param directory: where to save the ag_news data;
+    :param vocab_min_freq: int type, minimum frequency of word to be in the vocab;
+    :return: Tuple[torch.utils.data.DataLoader, vocab.Vocab];
+    """
+    # get an iterator object for the training part of the ag_news dataset;
+    train_iter, = AG_NEWS(root=directory, split=("train",))
+    # process the strings by removing special characters and lower-casing;
+    def clean_text(text):
+        return re.sub("[^A-Za-z\s]+", '', re.sub("\\\\", ' ', text).strip()).lower()
+    # since bert has the Next Sentence Prediction as a training procedure, I split
+    # each sentence from the original dataset into two halves;
+    def split_in_half(text, with_clean=False):
+        tokenised = clean_text(text).split() if with_clean else text.split()
+        return tokenised[:len(tokenised) // 2], tokenised[len(tokenised) // 2:]
+    # clean and split text;
+    train_paragraphs = [split_in_half(text, with_clean=True) for _, text in train_iter]
+    # get relevant dataset;
+    dataset = GutenbergDataset(train_paragraphs, max_len=max_len, min_freq=vocab_min_freq)
+    # get relevant DataLoader object;
+    loader = DataLoader(dataset, shuffle=True, batch_size=batch_size)
+    return loader, dataset.vocab
